@@ -18,6 +18,7 @@ def store(path_addr: str):
     from store_embedding import store_chuks
 
     contents = extracted_content(path_addr)
+    total_chunks = 0
     for i,key in enumerate(contents.keys()):
         text = contents[key]
         chunked_text = recursive_split(text)
@@ -27,13 +28,49 @@ def store(path_addr: str):
 
 def retrieve(query: str):
     from chunk_retriever import relevent_chunks
+    from openai import OpenAI
+    from dotenv import load_dotenv
+    import os
 
-    retrieved_chunks = ""
-    chunks = relevent_chunks(query, top_k=1)
-    for chunk in chunks:
-        retrieved_chunks += chunk
-    
-    return retrieved_chunks
+    load_dotenv()
+
+    client = OpenAI(
+        base_url="https://generativelanguage.googleapis.com/v1beta/",
+        api_key=os.getenv("GOOGLE_AI_STUDIO")
+    )
+
+    while True:
+        print(query)
+        retrieved_chunks = ""            # final retrieved chunks
+        chunks = relevent_chunks(query, top_k=1)
+        for chunk in chunks:
+            retrieved_chunks += chunk
+        
+        response = client.chat.completions.create(
+            model="gemini-3-flash-preview",
+            messages= [
+                {"role":"system", "content":"You have been provided with a text_content and a query try to answer the query using text_content"},
+                {
+                    "role":"user", "content":
+                    f"""
+                    text_content:{retrieved_chunks}\n\n
+                    query: {query}
+                    """
+                }
+            ],
+            stream=True
+        )
+
+        print("\n\033[92mBot:\033[0m ", end="", flush=True)  # green "Bot:" label
+        for reply_chunk in response:
+            piece = reply_chunk.choices[0].delta.content
+            if piece != None:
+                print(piece, end="", flush=True)
+        
+        query = input("\n\n\033[31mAsk another question: \033[0m")
+        if query == "quit":
+            break
+
 
     
 

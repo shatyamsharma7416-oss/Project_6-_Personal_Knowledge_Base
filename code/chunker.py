@@ -1,4 +1,4 @@
-def recursive_split(text, chunk_size=100, chunk_overlap=40, separators=["\n\n", "\n", " ", ""]):
+def recursive_split(text, chunk_size=250, chunk_overlap=70, separators=["\n\n", "\n", " ", ""]):
     # Base case: if it fits, we are done
     if len(text) <= chunk_size:
         return [text]
