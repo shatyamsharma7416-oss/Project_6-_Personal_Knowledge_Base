@@ -1,4 +1,12 @@
+from openai import OpenAI
+from dotenv import load_dotenv
 import argparse
+import os
+
+from doc_extractor import extracted_content
+from chunker import recursive_split
+from store_embedding import store_chuks
+from chunk_retriever import relevent_chunks
 
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest="command")
@@ -13,25 +21,16 @@ args = parser.parse_args()
 
 
 def store(path_addr: str):
-    from doc_extractor import extracted_content
-    from chunker import recursive_split
-    from store_embedding import store_chuks
-
     contents = extracted_content(path_addr)
     total_chunks = 0
     for i,key in enumerate(contents.keys()):
         text = contents[key]
         chunked_text = recursive_split(text)
-        total_chunks += store_chuks(chunked_text)
+        total_chunks += store_chuks(chunked_text, file_name=key)
     
     print(f"Ingested {total_chunks+1} chunks from {i+1} documents")
 
 def retrieve(query: str):
-    from chunk_retriever import relevent_chunks
-    from openai import OpenAI
-    from dotenv import load_dotenv
-    import os
-
     load_dotenv()
 
     client = OpenAI(
